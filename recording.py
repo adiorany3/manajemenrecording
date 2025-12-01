@@ -5,6 +5,8 @@ import glob
 import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
+import folium
+from streamlit_folium import st_folium
 
 # Konfigurasi halaman
 st.set_page_config(
@@ -396,35 +398,103 @@ if os.path.isfile(file_path):
                 df_kode = df_kode[cols]
                 st.info(f'📋 Total: {len(df_kode)} kode gejala tercatat')
                 st.dataframe(df_kode, use_container_width=True, height=400)
-        # Tab Peta Lokasi - Menampilkan Peta
+        # Tab Peta Lokasi - Menampilkan Peta Interaktif
         with tab[tab_list.index('Peta Lokasi')]:
             st.markdown("<br>", unsafe_allow_html=True)
             st.subheader('🗺️ Peta Lokasi Peternakan')
             st.markdown("<br>", unsafe_allow_html=True)
-            peta_path = os.path.join('.', 'peta.jpeg')
-            if os.path.isfile(peta_path):
-                try:
-                    image = Image.open(peta_path)
-                    col1, col2, col3 = st.columns([1, 8, 1])
-                    with col2:
-                        st.image(image, caption='📍 Peta Lokasi Peternakan Sapi', use_container_width=True)
-                    st.success('✅ Peta berhasil dimuat')
-                except Exception as e:
-                    st.error(f'❌ Gagal memuat peta.jpeg: {e}')
-            else:
-                st.warning('⚠️ File peta.jpeg tidak ditemukan di folder ini.')
             
-            # Opsi untuk tetap menampilkan Peta Lokasi jika ada
-            other_sheets = [s for s in sheet_names if s not in ['Recording', 'Kepemilikan', 'KodePenyakit', 'GejalaPenyakit']]
-            if other_sheets:
-                st.write('---')
-                st.write('**Data Peta Lokasi:**')
-                sheet = st.selectbox('Pilih Peta Lokasi:', other_sheets)
-                df = pd.read_excel(file_path, sheet_name=sheet)
-                st.write('Data Preview:')
-                st.dataframe(df)
-                st.write('Statistik Data:')
-                st.write(df.describe(include='all'))
+            # Cek apakah sheet Lokasi ada
+            if 'Lokasi' in sheet_names:
+                try:
+                    df_lokasi = pd.read_excel(file_path, sheet_name='Lokasi')
+                    
+                    # Tampilkan data lokasi
+                    st.write('### 📋 Data Lokasi Kelompok Ternak')
+                    st.dataframe(df_lokasi, use_container_width=True, height=250)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.write('### 🗺️ Peta Interaktif Lokasi')
+                    
+                    # Parse koordinat dan buat peta
+                    if 'Kordinat' in df_lokasi.columns:
+                        # Koordinat pusat peta (rata-rata dari semua lokasi)
+                        valid_coords = []
+                        for coord in df_lokasi['Kordinat'].dropna():
+                            try:
+                                lat, lon = map(float, str(coord).split(','))
+                                valid_coords.append((lat, lon))
+                            except:
+                                pass
+                        
+                        if valid_coords:
+                            center_lat = sum([c[0] for c in valid_coords]) / len(valid_coords)
+                            center_lon = sum([c[1] for c in valid_coords]) / len(valid_coords)
+                            
+                            # Buat peta dengan folium
+                            m = folium.Map(
+                                location=[center_lat, center_lon],
+                                zoom_start=12,
+                                tiles='OpenStreetMap'
+                            )
+                            
+                            # Tambahkan marker untuk setiap lokasi
+                            for idx, row in df_lokasi.iterrows():
+                                if pd.notna(row.get('Kordinat')):
+                                    try:
+                                        lat, lon = map(float, str(row['Kordinat']).split(','))
+                                        
+                                        # Buat popup content
+                                        popup_html = f"""
+                                        <div style='font-family: Arial; min-width: 200px;'>
+                                            <h4 style='color: #4CAF50; margin: 0 0 10px 0;'>{row.get('Nama Kelompok', 'N/A')}</h4>
+                                            <p style='margin: 5px 0;'><b>📍 Desa:</b> {row.get('Desa', 'N/A')}</p>
+                                            <p style='margin: 5px 0;'><b>📮 Alamat:</b> {row.get('Alamat', 'N/A')}</p>
+                                            <p style='margin: 5px 0;'><b>🌐 Koordinat:</b> {row.get('Kordinat', 'N/A')}</p>
+                                            {f"<p style='margin: 5px 0;'><a href='{row.get('Gmaps', '')}' target='_blank'>🔗 Buka di Google Maps</a></p>" if pd.notna(row.get('Gmaps')) else ''}
+                                        </div>
+                                        """
+                                        
+                                        folium.Marker(
+                                            location=[lat, lon],
+                                            popup=folium.Popup(popup_html, max_width=300),
+                                            tooltip=row.get('Nama Kelompok', 'Lokasi'),
+                                            icon=folium.Icon(color='green', icon='home', prefix='fa')
+                                        ).add_to(m)
+                                        
+                                    except Exception as e:
+                                        st.warning(f"⚠️ Gagal memproses koordinat untuk {row.get('Nama Kelompok', 'lokasi')}: {e}")
+                            
+                            # Tampilkan peta
+                            st_folium(m, width=1200, height=500)
+                            
+                            st.success(f'✅ Peta berhasil dimuat dengan {len(valid_coords)} lokasi')
+                            
+                            # Informasi tambahan
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            st.info('💡 **Tips:** Klik marker untuk melihat detail lokasi. Gunakan scroll untuk zoom in/out.')
+                            
+                        else:
+                            st.warning('⚠️ Tidak ada koordinat valid yang ditemukan dalam data.')
+                    else:
+                        st.warning('⚠️ Kolom "Kordinat" tidak ditemukan dalam sheet Lokasi.')
+                        
+                except Exception as e:
+                    st.error(f'❌ Gagal memuat data lokasi: {e}')
+            else:
+                # Fallback ke gambar peta jika sheet Lokasi tidak ada
+                peta_path = os.path.join('.', 'peta.jpeg')
+                if os.path.isfile(peta_path):
+                    try:
+                        image = Image.open(peta_path)
+                        col1, col2, col3 = st.columns([1, 8, 1])
+                        with col2:
+                            st.image(image, caption='📍 Peta Lokasi Peternakan Sapi', use_container_width=True)
+                        st.success('✅ Peta berhasil dimuat')
+                    except Exception as e:
+                        st.error(f'❌ Gagal memuat peta.jpeg: {e}')
+                else:
+                    st.warning('⚠️ Sheet "Lokasi" dan file peta.jpeg tidak ditemukan.')
         
         # Tab Upload Data
         with tab[tab_list.index('Upload Data')]:

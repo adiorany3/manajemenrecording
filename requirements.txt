@@ -3,3 +3,5 @@ pandas
 matplotlib
 openpyxl
 pillow
+folium
+streamlit-folium
