@@ -1,6 +1,7 @@
 # 🐄 Dashboard Manajemen Peternakan Sapi
 
 Aplikasi web interaktif berbasis Streamlit untuk mengelola, menganalisis, dan memvisualisasikan data peternakan sapi dari file Excel (`data.xlsx`).
+Contoh website : https://manajemenrecording.streamlit.app/
 
 ## ✨ Fitur Utama
 
