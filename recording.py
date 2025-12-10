@@ -7,6 +7,7 @@ from PIL import Image
 import numpy as np
 import folium
 from streamlit_folium import st_folium
+from insights import generate_maintenance_insights
 
 # Konfigurasi halaman
 st.set_page_config(
@@ -286,6 +287,19 @@ if os.path.isfile(file_path):
                         jual_data = df_rec_clean['Jual'].dropna()
                         if jual_data.sum() > 0:
                             st.success(f"💰 **Total Penjualan:** {jual_data.sum():.0f} ekor sepanjang periode recording")
+                    # Insight Pemeliharaan (Recording) menggunakan fungsi global
+                    if st.checkbox('Tampilkan Insight Pemeliharaan (Recording)'):
+                        insights_rec = generate_maintenance_insights(df_recording, domain='recording')
+                        st.subheader('🔧 Insight Pemeliharaan - Recording')
+                        for typ, message in insights_rec:
+                            if typ == 'warning':
+                                st.warning(message)
+                            elif typ == 'info':
+                                st.info(message)
+                            elif typ == 'success':
+                                st.success(message)
+                            else:
+                                st.write(message)
         # Tab Kepemilikan
         if 'Kepemilikan' in tab_list:
             with tab[tab_list.index('Kepemilikan')]:
@@ -378,6 +392,19 @@ if os.path.isfile(file_path):
                     st.write(f"- Skala Kecil (≤5 ekor): {small_owners} pemilik")
                     st.write(f"- Skala Menengah (6-10 ekor): {medium_owners} pemilik")
                     st.write(f"- Skala Besar (>10 ekor): {large_owners} pemilik")
+                # Insight Kepemilikan: gunakan fungsi utama
+                if st.checkbox('Tampilkan Insight Pemeliharaan (Kepemilikan)'):
+                    insights_kep = generate_maintenance_insights(df_kepemilikan, domain='kepemilikan')
+                    st.subheader('🔧 Insight Pemeliharaan - Kepemilikan')
+                    for typ, message in insights_kep:
+                        if typ == 'warning':
+                            st.warning(message)
+                        elif typ == 'info':
+                            st.info(message)
+                        elif typ == 'success':
+                            st.success(message)
+                        else:
+                            st.write(message)
         # Tab KodePenyakit (jika ada)
         if 'KodePenyakit' in tab_list:
             with tab[tab_list.index('KodePenyakit')]:

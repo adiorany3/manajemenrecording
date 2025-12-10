@@ -15,6 +15,7 @@ Contoh website : https://manajemenrecording.streamlit.app/
   - Analisis tren populasi (peningkatan/penurunan)
   - Identifikasi bulan dengan kematian tertinggi
   - Total penjualan sepanjang periode
+  - **Insight Pemeliharaan**: Rekomendasi pemeliharaan berdasarkan data (kegiatan audit kesehatan, pembersihan kandang, validasi input, jadwal pemeriksaan) ditampilkan saat Anda mencentang checkbox 'Tampilkan Insight Pemeliharaan (Recording)'.
 
 ### 👥 Tab Kepemilikan
 - Data kepemilikan sapi per pemilik
@@ -23,6 +24,7 @@ Contoh website : https://manajemenrecording.streamlit.app/
 - **Insight Kepemilikan**: 
   - Pemilik dengan jumlah sapi terbanyak
   - Distribusi skala kepemilikan (kecil/menengah/besar)
+  - **Insight Pemeliharaan**: Rekomendasi perawatan dan pembinaan bila banyak pemilik skala kecil, atau identifikasi data yang perlu validasi. Aktifkan lewat checkbox 'Tampilkan Insight Pemeliharaan (Kepemilikan)'.
 
 ### 🏥 Tab KodePenyakit
 - Mapping otomatis kode gejala dengan nama penyakit
